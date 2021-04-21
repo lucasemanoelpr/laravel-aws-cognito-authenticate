@@ -18,6 +18,6 @@ Route::post('/register-aws-cognito', [\App\Http\Controllers\ApiAuthController::c
 Route::post('/login-aws-cognito', [\App\Http\Controllers\ApiAuthController::class, 'login']);
 
 Route::middleware('aws-cognito')->get('/user-cognito', function (Request $request) {
-    return $request->user();
+    return Auth('api')->user();
 });
 
