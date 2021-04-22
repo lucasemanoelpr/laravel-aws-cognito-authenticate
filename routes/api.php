@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,8 +17,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/register-aws-cognito', [\App\Http\Controllers\ApiAuthController::class, 'register_user']);
 Route::post('/login-aws-cognito', [\App\Http\Controllers\ApiAuthController::class, 'login']);
+Route::post('/confirmation-email', [\App\Http\Controllers\ApiAuthController::class, 'confirm_email']);
+
 
 Route::middleware('aws-cognito')->get('/user-cognito', function (Request $request) {
-    return Auth('api')->user();
+    return Auth::user();
 });
 

@@ -132,7 +132,7 @@ return [
     | changing the password.
     |
     */
-    'force_password_change_api' => env('AWS_COGNITO_FORCE_PASSWORD_CHANGE_API', false),
+    'force_password_change_api' => env('AWS_COGNITO_FORCE_PASSWORD_CHANGE_API', true),
 
     /*
     |--------------------------------------------------------------------------

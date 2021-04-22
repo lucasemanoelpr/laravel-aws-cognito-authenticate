@@ -10,10 +10,43 @@ use Illuminate\Support\Facades\Auth;
 use Ellaisys\Cognito\Auth\RegistersUsers;
 use Ellaisys\Cognito\AwsCognitoClaim;
 use Ellaisys\Cognito\Auth\AuthenticatesUsers as CognitoAuthenticatesUsers;
+use Ellaisys\Cognito\Exceptions\InvalidUserFieldException;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Collection;
+use Ellaisys\Cognito\AwsCognitoClient;
+use Ellaisys\Cognito\Auth\VerifiesEmails;
 
 class ApiAuthController extends Controller
 {
-    use RegistersUsers, CognitoAuthenticatesUsers;
+    use RegistersUsers, CognitoAuthenticatesUsers, VerifiesEmails;
+
+    public function createCognitoUser(Collection $request, array $clientMetadata=null)
+    {
+        //Initialize Cognito Attribute array
+        $attributes = [];
+
+        //Get the registeration fields
+        $userFields = config('cognito.cognito_user_fields');
+
+        //Iterate the fields
+        foreach ($userFields as $key => $userField) {
+            if ($request->has($userField)) {
+                $attributes[$key] = $request->get($userField);
+            } else {
+                Log::error('RegistersUsers:createCognitoUser:InvalidUserFieldException');
+                Log::error("The configured user field {$userField} is not provided in the request.");
+                throw new InvalidUserFieldException("The configured user field {$userField} is not provided in the request.");
+            } //End if 
+        } //Loop ends
+
+        //Register the user in Cognito
+        $userKey = $request->has('username')?'username':'email';
+
+        //Temporary Password paramter
+        $password = $request->has('password')?$request['password']:null;
+        app()->make(AwsCognitoClient::class)->register($request[$userKey], $password, $attributes);
+        return true;
+    } //Function ends
 
     public function register_user(Request $request)
     {
@@ -26,7 +59,7 @@ class ApiAuthController extends Controller
         $collection = collect($request->all());
         $data = $collection->only('name', 'email', 'password'); //passing 'password' is optional.
 
-        if ($cognitoRegistered=$this->createCognitoUser($data)) {
+        if ($this->createCognitoUser($data)) {
             $user = User::create($collection->only('name', 'email')->toArray());
         }  
 
@@ -55,5 +88,10 @@ class ApiAuthController extends Controller
             'status' => 'Error', 
             'message' => $claim
         ], 400);
+    }
+
+    public function confirm_email(Request $request) {
+        $collection = collect($request->all());
+        $this->verify($collection);
     }
 }
